@@ -174,7 +174,7 @@ export default function Home() {
           )}
         </main>
         <footer className="text-center p-4 text-xs text-muted-foreground">
-          COPYRIGHT © 2025 by <a href="https://www.linkedin.com/in/rizqu/" target="_blank" rel="noopener noreferrer" className="font-semibold text-primary hover:underline">Rizqu</a>. All rights reserved.
+          Created by <a href="https://www.linkedin.com/in/rizqu/" target="_blank" rel="noopener noreferrer" className="font-semibold text-primary hover:underline">Rizqu</a>. All rights reserved.
         </footer>
       </div>
   );
