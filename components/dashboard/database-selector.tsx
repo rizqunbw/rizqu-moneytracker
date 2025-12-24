@@ -120,7 +120,7 @@ export function DatabaseSelector({ databases, selectedDb, onSelect, onUpdateData
                 <button
                   type="button"
                   onClick={(e) => handleEditClick(e, index, db)}
-                  className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md opacity-0 group-hover:opacity-100 transition-all"
+                  className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-all"
                   title="Edit Database"
                 >
                   <Settings className="w-3.5 h-3.5" />
