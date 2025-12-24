@@ -77,15 +77,8 @@ export function DatabaseManager({ user, onUpdateUser, currentDbUrl, onSelectDb, 
         body: JSON.stringify({ email: user.email, databases: newDatabases }),
       });
 
-      console.log(res)
       const data = await res.json();
 
-      if (isEditing !== null){
-          const res2 = await fetch('/api/user/update-databases', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: user.email, databases: newDatabases }),
-          });}
       if (data.status === 'success') {
         const updatedUser = { ...user, databases: data.databases };
         onUpdateUser(updatedUser);
