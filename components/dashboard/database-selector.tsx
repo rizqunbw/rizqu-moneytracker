@@ -145,75 +145,67 @@ export function DatabaseSelector({ databases, selectedDb, onSelect, onUpdateData
       )}
 
       {/* Edit/Add Modal Overlay */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-100 backdrop-blur-sm">
-          <div className="bg-card rounded-xl shadow-2xl w-full max-w-md p-6 m-4 animate-in fade-in zoom-in-95 border">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-semibold text-foreground">
-                {isAdding ? 'Add New Database' : 'Edit Database'}
-              </h3>
-              <button onClick={closeModal} className="text-muted-foreground hover:text-foreground">
-                <X className="w-5 h-5" />
-              </button>
+      <Dialog open={showModal} onOpenChange={(open) => !open && closeModal()}>
+        <DialogContent className="max-w-md z-99999">
+          <DialogHeader>
+            <DialogTitle>{isAdding ? 'Add New Database' : 'Edit Database'}</DialogTitle>
+          </DialogHeader>
+
+          {onNavigateToDocs && (
+            <button onClick={onNavigateToDocs} className="text-sm text-primary hover:underline flex items-center justify-center gap-2 mx-auto transition-colors p-3 bg-secondary rounded-lg w-full">
+              <Info className="h-4 w-4" /> Wajib Baca: Panduan Setup Database & Script
+            </button>
+          )}
+
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Database Name</label>
+              <input
+                type="text"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                placeholder="e.g., Personal Finance"
+              />
             </div>
-
-            {onNavigateToDocs && (
-              <button onClick={onNavigateToDocs} className="text-sm text-primary hover:underline flex items-center justify-center gap-2 mx-auto transition-colors p-3 bg-secondary rounded-lg w-full">
-                <Info className="h-4 w-4" /> Wajib Baca: Panduan Setup Database & Script
-              </button>
-            )}
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Database Name</label>
-                <input
-                  type="text"
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
-                  placeholder="e.g., Personal Finance"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Script URL</label>
-                {!isAdding && (
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Maksimal perubahan link database adalah 3 kali. ({editingDb?.data.editCount || 0}/3)
-                  </p>
-                )}
-                <input
-                  type="text"
-                  value={formUrl}
-                  onChange={(e) => setFormUrl(e.target.value)}
-                  disabled={!isAdding && (editingDb?.data.editCount || 0) >= 3}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-mono text-xs ${!isAdding && (editingDb?.data.editCount || 0) >= 3 ? 'bg-muted text-muted-foreground cursor-not-allowed' : ''}`}
-                  placeholder="https://script.google.com/..."
-                />
-                {(!isAdding && (editingDb?.data.editCount || 0) >= 3) && <p className="text-xs text-destructive mt-1">Batas edit link tercapai (3/3). Hanya nama yang dapat diubah.</p>}
-              </div>
-
-            </div>
-
-            <div className="flex justify-end gap-3 mt-8">
-              <button
-                onClick={closeModal}
-                className="px-4 py-2 text-muted-foreground hover:bg-accent rounded-lg transition-colors font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={!formName || !formUrl || isSaving}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {isSaving ? <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></span> : <Check className="w-4 h-4" />}
-                {isSaving ? 'Saving...' : 'Save Changes'}
-              </button>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Script URL</label>
+              {!isAdding && (
+                <p className="text-xs text-muted-foreground mb-2">
+                  Maksimal perubahan link database adalah 3 kali. ({editingDb?.data.editCount || 0}/3)
+                </p>
+              )}
+              <input
+                type="text"
+                value={formUrl}
+                onChange={(e) => setFormUrl(e.target.value)}
+                disabled={!isAdding && (editingDb?.data.editCount || 0) >= 3}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-mono text-xs ${!isAdding && (editingDb?.data.editCount || 0) >= 3 ? 'bg-muted text-muted-foreground cursor-not-allowed' : ''}`}
+                placeholder="https://script.google.com/..."
+              />
+              {(!isAdding && (editingDb?.data.editCount || 0) >= 3) && <p className="text-xs text-destructive mt-1">Batas edit link tercapai (3/3). Hanya nama yang dapat diubah.</p>}
             </div>
           </div>
-        </div>
-      )}
+
+          <DialogFooter>
+            <button
+              onClick={closeModal}
+              className="px-4 py-2 text-muted-foreground hover:bg-accent rounded-lg transition-colors font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={!formName || !formUrl || isSaving}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {isSaving ? <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></span> : <Check className="w-4 h-4" />}
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Upgrade Plan Modal (Shadcn) */}
       <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
