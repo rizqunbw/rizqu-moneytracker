@@ -91,6 +91,7 @@ export function DatabaseSelector({ databases, selectedDb, onSelect, onUpdateData
     <div className="relative" ref={dropdownRef}>
       {/* Trigger Button */}
       <button 
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-3 py-1.5 bg-background/50 border rounded-lg shadow-sm hover:bg-accent transition-colors min-w-40 justify-between h-9"
       >
@@ -103,7 +104,7 @@ export function DatabaseSelector({ databases, selectedDb, onSelect, onUpdateData
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-full min-w-60 bg-card text-card-foreground border rounded-lg shadow-lg z-50 py-1 animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute top-full left-0 mt-2 w-full min-w-60 bg-card text-card-foreground border rounded-lg shadow-lg z-9999 py-1 animate-in fade-in zoom-in-95 duration-100">
           <div className="max-h-75 overflow-y-auto">
             {databases.map((db, index) => (
               <div 
@@ -117,6 +118,7 @@ export function DatabaseSelector({ databases, selectedDb, onSelect, onUpdateData
                 
                 {/* Edit Button (Gear/Settings) */}
                 <button
+                  type="button"
                   onClick={(e) => handleEditClick(e, index, db)}
                   className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md opacity-0 group-hover:opacity-100 transition-all"
                   title="Edit Database"
@@ -131,6 +133,7 @@ export function DatabaseSelector({ databases, selectedDb, onSelect, onUpdateData
             <>
               <div className="h-px bg-border my-1" />
               <button
+                type="button"
                 onClick={handleAddClick}
                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-primary hover:bg-accent transition-colors"
               >
