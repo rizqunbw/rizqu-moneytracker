@@ -230,79 +230,287 @@ Script ini berfungsi sebagai **Database Pusat** untuk menyimpan data pengguna (e
 
 ```javascript
 function doPost(e) {
-  var lock = LockService.getScriptLock();
-  lock.tryLock(10000);
-
-  try {
-    var doc = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = doc.getSheetByName('Users');
-    
-    if (!sheet) {
-      sheet = doc.insertSheet('Users');
-      sheet.appendRow(['Email', 'Databases', 'Last Login']);
+  const lock = LockService.getScriptLock();
+  // Tunggu maksimal 10 detik untuk mendapatkan giliran
+  if (lock.tryLock(10000)) {
+    try {
+      return handleRequest(e);
+    } finally {
+      lock.releaseLock();
     }
-
-    var data = JSON.parse(e.postData.contents);
-    var action = data.action;
-
-    // --- 1. GET USER (LOGIN) ---
-    if (action === 'get-user') {
-      var email = data.email;
-      var rows = sheet.getDataRange().getValues();
-      var user = null;
-
-      for (var i = 1; i < rows.length; i++) {
-        if (rows[i][0] === email) {
-          user = {
-            email: rows[i][0],
-            databases: rows[i][1] ? JSON.parse(rows[i][1]) : []
-          };
-          // Update Last Login
-          sheet.getRange(i + 1, 3).setValue(new Date());
-          break;
-        }
-      }
-
-      if (!user) {
-        user = { email: email, databases: [] };
-        sheet.appendRow([email, '[]', new Date()]);
-      }
-
-      return ContentService.createTextOutput(JSON.stringify({ status: 'success', user: user })).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    // --- 2. UPDATE USER (SAVE DB LIST) ---
-    if (action === 'update-user') {
-      var email = data.email;
-      var updates = data.updates;
-      var databases = JSON.stringify(updates.databases || []);
-      
-      var rows = sheet.getDataRange().getValues();
-      var found = false;
-      
-      for (var i = 1; i < rows.length; i++) {
-        if (rows[i][0] === email) {
-          sheet.getRange(i + 1, 2).setValue(databases);
-          sheet.getRange(i + 1, 3).setValue(new Date());
-          found = true;
-          break;
-        }
-      }
-
-      if (!found) {
-        sheet.appendRow([email, databases, new Date()]);
-      }
-      
-      return ContentService.createTextOutput(JSON.stringify({ status: 'success', user: { email: email, databases: JSON.parse(databases) } })).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Action not found' })).setMimeType(ContentService.MimeType.JSON);
-
-  } catch (e) {
-    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: e.toString() })).setMimeType(ContentService.MimeType.JSON);
-  } finally {
-    lock.releaseLock();
+  } else {
+    return responseJSON({ status: 'error', message: 'Server busy, please try again.' });
   }
+}
+
+function handleRequest(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('Users');
+  
+  // 1. Buat sheet jika belum ada
+  if (!sheet) {
+    sheet = ss.insertSheet('Users');
+  }
+
+  // 2. CEK HEADER: Jika baris kosong, buat header DULU
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(['Email', 'Password', 'PIN', 'Created At', 'Databases', 'Edit Count']);
+    SpreadsheetApp.flush(); 
+  }
+
+  const data = JSON.parse(e.postData.contents);
+  const action = data.action;
+  
+  const lastCol = sheet.getLastColumn();
+  if (lastCol === 0) {
+    return responseJSON({ status: 'error', message: 'Sheet structure error (No columns)' });
+  }
+
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const emailIdx = headers.indexOf('Email');
+  const passIdx = headers.indexOf('Password');
+  const pinIdx = headers.indexOf('PIN');
+  const dbIdx = headers.indexOf('Databases');
+  const createdIdx = headers.indexOf('Created At');
+  const editCountIdx = headers.indexOf('Edit Count');
+  
+  if (emailIdx === -1 || passIdx === -1 || dbIdx === -1 || pinIdx === -1) {
+     return responseJSON({ status: 'error', message: 'Invalid Sheet Structure: Missing required columns.' });
+  }
+
+  const users = sheet.getDataRange().getValues(); 
+
+  // --- REGISTER ---
+  if (action === 'register') {
+    const user = data.user;
+    for (let i = 1; i < users.length; i++) {
+      if (users[i][emailIdx] === user.email) {
+         return responseJSON({ status: 'error', message: 'Email sudah terdaftar' });
+      }
+    }
+
+    // VALIDASI SCRIPT URL UNIK
+    if (user.databases && user.databases.length > 0) {
+      for (let d = 0; d < user.databases.length; d++) {
+        const urlToCheck = user.databases[d].scriptUrl;
+        if (urlToCheck) {
+          for (let i = 1; i < users.length; i++) {
+             let dbs = [];
+             try { dbs = JSON.parse(users[i][dbIdx]); } catch(e) { dbs = []; }
+             for (let k = 0; k < dbs.length; k++) {
+               if (dbs[k].scriptUrl && dbs[k].scriptUrl.trim() === urlToCheck.trim()) {
+                 return responseJSON({ status: 'error', message: 'Script URL sudah digunakan.' });
+               }
+             }
+          }
+        }
+      }
+    }
+    
+    const newRow = new Array(headers.length).fill('');
+    newRow[emailIdx] = user.email;
+    newRow[passIdx] = user.password;
+    newRow[pinIdx] = user.pin;
+    if (createdIdx > -1) newRow[createdIdx] = new Date();
+    newRow[dbIdx] = JSON.stringify(user.databases || []);
+    
+    sheet.appendRow(newRow);
+    return responseJSON({ status: 'success', message: 'Registrasi berhasil' });
+  }
+
+  // --- FIND USER ---
+  if (action === 'findUser') {
+    const email = data.email;
+    for (let i = 1; i < users.length; i++) {
+      if (users[i][emailIdx] === email) {
+        let dbs = [];
+        try { dbs = JSON.parse(users[i][dbIdx]); } catch(err) { dbs = []; }
+        
+        return responseJSON({ 
+          status: 'success', 
+          user: { 
+            email: users[i][emailIdx], 
+            password: users[i][passIdx], 
+            editCount: users[i][editCountIdx],
+            pin: users[i][pinIdx],
+            databases: dbs 
+          } 
+        });
+      }
+    }
+    return responseJSON({ status: 'not_found' });
+  }
+
+  // --- UPDATE USER ---
+  if (action === 'updateUser') {
+    const email = data.email;
+    const updates = data.updates;
+    
+    for (let i = 1; i < users.length; i++) {
+      if (users[i][emailIdx] === email) {
+        
+        if (updates.password) sheet.getRange(i + 1, passIdx + 1).setValue(updates.password);
+        if (updates.pin) sheet.getRange(i + 1, pinIdx + 1).setValue(updates.pin);
+
+        if (updates.databases) {
+           const currentDbJson = users[i][dbIdx];
+           let currentDbs = [];
+           try { currentDbs = JSON.parse(currentDbJson); } catch(e) { currentDbs = []; }
+           
+           const newDbs = updates.databases;
+           
+           // VALIDASI SCRIPT URL UNIK
+           for (let n = 0; n < newDbs.length; n++) {
+             const urlToCheck = newDbs[n].scriptUrl;
+             if (!urlToCheck) continue;
+
+             for (let r = 1; r < users.length; r++) {
+               if (r === i) continue; 
+               let otherDbs = [];
+               try { otherDbs = JSON.parse(users[r][dbIdx]); } catch(e) { otherDbs = []; }
+               for (let k = 0; k < otherDbs.length; k++) {
+                 if (otherDbs[k].scriptUrl && otherDbs[k].scriptUrl.trim() === urlToCheck.trim()) {
+                   return responseJSON({ status: 'error', message: 'Script URL sudah digunakan.' });
+                 }
+               }
+             }
+           }
+
+           // UPDATE TOKEN & EDIT COUNT
+           for (let j = 0; j < newDbs.length; j++) {
+             const newDb = newDbs[j];
+             
+             // Cari oldDb berdasarkan token dulu (jika ada), kalau tidak ada baru by name
+             let oldDb = null;
+             if (newDb.token) {
+                oldDb = currentDbs.find(d => d.token === newDb.token);
+             }
+             if (!oldDb) {
+                oldDb = currentDbs.find(d => d.name === newDb.name);
+             }
+             
+             if (oldDb) {
+               if (oldDb.scriptUrl !== newDb.scriptUrl) {
+                 newDb.token = generateToken(6);
+                 newDb.editCount = (oldDb.editCount || 0) + 1;
+               } else {
+                 newDb.token = oldDb.token || generateToken(6);
+                 newDb.editCount = oldDb.editCount || 0;
+               }
+             } else {
+               newDb.token = generateToken(6);
+               newDb.editCount = 0;
+             }
+           }
+           
+           sheet.getRange(i + 1, dbIdx + 1).setValue(JSON.stringify(updates.databases));
+        }
+        
+        const updatedVal = sheet.getRange(i + 1, dbIdx + 1).getValue();
+        let dbs = [];
+        try { dbs = JSON.parse(updatedVal); } catch(err) { dbs = []; }
+
+        return responseJSON({ 
+          status: 'success', 
+          user: { 
+            email: users[i][emailIdx], 
+            password: users[i][passIdx], 
+            pin: users[i][pinIdx],
+            editCount: 0, 
+            databases: dbs
+          } 
+        });
+      }
+    }
+    return responseJSON({ status: 'error', message: 'User not found' });
+  }
+
+  // --- FIND DB BY TOKEN ---
+  if (action === 'findDbByToken') {
+    const token = data.token;
+    if (!token) return responseJSON({ status: 'error', message: 'Token required' });
+
+    for (let i = 1; i < users.length; i++) {
+      let dbs = [];
+      try { dbs = JSON.parse(users[i][dbIdx]); } catch(e) { dbs = []; }
+      const foundDb = dbs.find(d => d.token === token);
+      if (foundDb) {
+        return responseJSON({
+          status: 'success',
+          data: {
+            name: foundDb.name,
+            scriptUrl: foundDb.scriptUrl,
+            ownerEmail: users[i][emailIdx]
+          }
+        });
+      }
+    }
+    return responseJSON({ status: 'error', message: 'Database not found or invalid token' });
+  }
+
+  // --- GET ALL USERS ---
+  if (action === 'getAllUsers') {
+    const allUsers = [];
+    for (let i = 1; i < users.length; i++) {
+      let dbs = [];
+      try { dbs = JSON.parse(users[i][dbIdx]); } catch(e) { dbs = []; }
+      allUsers.push({
+        email: users[i][emailIdx],
+        password: users[i][passIdx],
+        pin: users[i][pinIdx],
+        editCount: users[i][editCountIdx],
+        databases: dbs,
+        createdAt: createdIdx > -1 ? users[i][createdIdx] : ''
+      });
+    }
+    return responseJSON({ status: 'success', users: allUsers });
+  }
+
+  // --- DELETE USER ---
+  if (action === 'deleteUser') {
+    const targetEmail = data.targetEmail;
+    for (let i = 1; i < users.length; i++) {
+      if (users[i][emailIdx] === targetEmail) {
+        sheet.deleteRow(i + 1);
+        return responseJSON({ status: 'success', message: 'User deleted' });
+      }
+    }
+    return responseJSON({ status: 'error', message: 'User not found' });
+  }
+
+  // --- DELETE USER DATABASE ---
+  if (action === 'deleteUserDatabase') {
+    const targetEmail = data.targetEmail;
+    const dbIndex = data.dbIndex;
+    for (let i = 1; i < users.length; i++) {
+      if (users[i][emailIdx] === targetEmail) {
+        let dbs = [];
+        try { dbs = JSON.parse(users[i][dbIdx]); } catch(e) { dbs = []; }
+        if (dbIndex >= 0 && dbIndex < dbs.length) {
+          dbs.splice(dbIndex, 1);
+          sheet.getRange(i + 1, dbIdx + 1).setValue(JSON.stringify(dbs));
+          return responseJSON({ status: 'success', message: 'Database deleted' });
+        }
+        return responseJSON({ status: 'error', message: 'Database index invalid' });
+      }
+    }
+    return responseJSON({ status: 'error', message: 'User not found' });
+  }
+
+  return responseJSON({ status: 'error', message: 'Action tidak valid' });
+}
+
+function generateToken(length) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+function responseJSON(data) {
+  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
 }
 ```
 </details>
