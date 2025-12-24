@@ -59,7 +59,12 @@ export function DatabaseSelector({ databases, selectedDb, onSelect, onUpdateData
   const handleSave = async () => {
     if (isSaving) return;
     const newDbs = [...databases];
-    const newDbData = { name: formName, scriptUrl: formUrl };
+    const newDbData: DbInfo = { 
+      name: formName, 
+      scriptUrl: formUrl,
+      token: isAdding ? undefined : editingDb?.data.token,
+      editCount: isAdding ? undefined : editingDb?.data.editCount
+    };
 
     if (isAdding) {
       newDbs.push(newDbData);
@@ -164,7 +169,7 @@ export function DatabaseSelector({ databases, selectedDb, onSelect, onUpdateData
                 type="text"
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all bg-background text-foreground"
                 placeholder="e.g., Personal Finance"
               />
             </div>
@@ -181,7 +186,7 @@ export function DatabaseSelector({ databases, selectedDb, onSelect, onUpdateData
                 value={formUrl}
                 onChange={(e) => setFormUrl(e.target.value)}
                 disabled={!isAdding && (editingDb?.data.editCount || 0) >= 3}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-mono text-xs ${!isAdding && (editingDb?.data.editCount || 0) >= 3 ? 'bg-muted text-muted-foreground cursor-not-allowed' : ''}`}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-mono text-xs bg-background text-foreground ${!isAdding && (editingDb?.data.editCount || 0) >= 3 ? 'bg-muted text-muted-foreground cursor-not-allowed' : ''}`}
                 placeholder="https://script.google.com/..."
               />
               {(!isAdding && (editingDb?.data.editCount || 0) >= 3) && <p className="text-xs text-destructive mt-1">Batas edit link tercapai (3/3). Hanya nama yang dapat diubah.</p>}

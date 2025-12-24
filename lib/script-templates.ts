@@ -150,7 +150,15 @@ function handleRequest(e) {
            // UPDATE TOKEN & EDIT COUNT
            for (let j = 0; j < newDbs.length; j++) {
              const newDb = newDbs[j];
-             const oldDb = currentDbs.find(d => d.name === newDb.name);
+             
+             // Cari oldDb berdasarkan token dulu (jika ada), kalau tidak ada baru by name
+             let oldDb = null;
+             if (newDb.token) {
+                oldDb = currentDbs.find(d => d.token === newDb.token);
+             }
+             if (!oldDb) {
+                oldDb = currentDbs.find(d => d.name === newDb.name);
+             }
              
              if (oldDb) {
                if (oldDb.scriptUrl !== newDb.scriptUrl) {
