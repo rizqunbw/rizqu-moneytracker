@@ -1,0 +1,65 @@
+export const LOADING_MESSAGES = {
+  register: [
+    "Registering your account...",
+    "Creating your secure profile...",
+    "Setting up your personal dashboard...",
+    "Finalizing your registration...",
+    "Almost ready to start tracking...",
+  ],
+  login: [
+    "Logging in to your account...",
+    "Verifying your credentials...",
+    "Loading your financial data...",
+    "Preparing your dashboard...",
+    "Welcome back, getting things ready...",
+  ],
+  setup: [
+    "Connecting to your database...",
+    "Verifying connection...",
+    "Establishing secure link...",
+    "Configuring your dashboard...",
+    "Loading initial data...",
+  ],
+  income: [
+    "Recording your income...",
+    "Adding funds to your balance...",
+    "Updating your financial records...",
+    "Saving your earnings...",
+    "Syncing data securely...",
+  ],
+  expense: [
+    "Recording your expense...",
+    "Updating your outcome...",
+    "Adjusting your wallet balance...",
+    "Saving transaction details...",
+    "Processing your spending...",
+  ],
+  edit: [
+    "Editing the current transaction...",
+    "Updating transaction details...",
+    "Syncing changes to database...",
+    "Refining your records...",
+    "Saving your modifications...",
+  ],
+  delete: [
+    "Deleting selected transaction...",
+    "Removing data from records...",
+    "Updating your balance...",
+    "Cleaning up your dashboard...",
+    "Finalizing deletion...",
+  ],
+  loadData: [
+    "Loading your transactions...",
+    "Fetching latest records...",
+    "Syncing your dashboard...",
+    "Retrieving financial data...",
+    "Almost there...",
+  ],
+  default: [
+    "Processing your request...",
+    "Please wait a moment...",
+    "Updating data...",
+    "Syncing with server...",
+    "Almost done...",
+  ]
+};

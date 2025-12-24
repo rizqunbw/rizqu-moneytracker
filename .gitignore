@@ -34,3 +34,6 @@ ts-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Override global gitignore: Paksa track folder lib
+!lib/
