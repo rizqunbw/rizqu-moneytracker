@@ -539,16 +539,20 @@ export const DashboardView = ({ user, initialDb, onLogout, onUpdateUser, isViewe
                                   </Button>
                               </div>
                           )}
-                          <div className="ml-auto">
-                              <Button variant="ghost" size="icon" onClick={onLogout} title="Logout" className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
-                                  <LogOut className="h-5 w-5" />
-                              </Button>
-                          </div>
                       </>
                   ) : (
                       <span className="text-xs text-muted-foreground font-medium bg-muted px-2 py-1 rounded">{selectedDb.name} (Read Only)</span>
                   )}
                 </div>
+
+                {/* Logout Button Row */}
+                {!isViewer && (
+                  <div className="flex justify-end w-full">
+                    <Button variant="ghost" size="sm" onClick={onLogout} className="h-8 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors px-2">
+                        <LogOut className="h-3.5 w-3.5 mr-1.5" /> Logout
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
