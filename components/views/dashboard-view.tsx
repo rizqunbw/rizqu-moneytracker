@@ -476,7 +476,13 @@ export const DashboardView = ({ user, initialDb, onLogout, onUpdateUser, isViewe
     e.preventDefault(); e.stopPropagation(); setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
-      if (file.type.startsWith("image/")) setImageFile(file);
+      if (file.type.startsWith("image/")) {
+        if (file.size > 3 * 1024 * 1024) { // Limit 3MB
+           toast.error("File terlalu besar", { description: "Maksimal ukuran gambar adalah 3MB agar proses cepat." });
+           return;
+        }
+        setImageFile(file);
+      }
       else toast.error("File tidak valid", { description: "Harap upload file gambar." });
       e.dataTransfer.clearData();
     }
@@ -615,7 +621,20 @@ export const DashboardView = ({ user, initialDb, onLogout, onUpdateUser, isViewe
                     onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
                     className={`border-2 border-dashed rounded-lg p-2 flex flex-col items-center justify-center text-center transition-all cursor-pointer relative h-14 ${isDragging ? 'border-primary bg-primary/10' : 'border-muted-foreground/20 hover:bg-accent/50 hover:border-primary/50'}`}
                   >
-                    <Input type="file" accept="image/*" className={`absolute inset-0 w-full h-full opacity-0 cursor-pointer ${isDragging ? 'pointer-events-none' : ''}`} onChange={(e) => setImageFile(e.target.files?.[0] || null)} />
+                    <Input 
+                      type="file" 
+                      accept="image/*" 
+                      className={`absolute inset-0 w-full h-full opacity-0 cursor-pointer ${isDragging ? 'pointer-events-none' : ''}`} 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file && file.size > 3 * 1024 * 1024) {
+                          toast.error("File terlalu besar", { description: "Maksimal 3MB." });
+                          e.target.value = ""; // Reset input
+                        } else {
+                          setImageFile(file || null);
+                        }
+                      }} 
+                    />
                     {imageFile ? (
                       <div className="flex items-center text-green-600 gap-2">
                         <CheckCircle className="h-4 w-4" />

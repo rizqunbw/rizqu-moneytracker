@@ -338,6 +338,20 @@ export const USER_SCRIPT_TEMPLATE = `function doGet(e) {
 }
 
 function doPost(e) {
+  const lock = LockService.getScriptLock();
+  // Tunggu maksimal 30 detik untuk mendapatkan giliran
+  if (lock.tryLock(30000)) {
+    try {
+      return handlePost(e);
+    } finally {
+      lock.releaseLock();
+    }
+  } else {
+    return responseJSON({ status: 'error', message: 'Server busy (Lock timeout). Please try again.' });
+  }
+}
+
+function handlePost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
     const action = data.action;
