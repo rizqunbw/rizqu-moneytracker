@@ -220,7 +220,6 @@ Script ini berfungsi sebagai **Database Pusat** untuk menyimpan data pengguna (e
 1. Buat Spreadsheet baru di Google Sheets.
 2. Beri nama (misal: `Money Tracker Admin`).
 3. Ubah nama sheet bawah menjadi **Users**.
-4. (Opsional) Buat header di baris 1: `Email`, `Databases`, `Last Login`.
 
 ### Langkah 2: Pasang Script Admin
 1. Klik **Extensions** > **Apps Script**.
