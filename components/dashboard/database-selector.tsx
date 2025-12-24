@@ -104,8 +104,8 @@ export function DatabaseSelector({ databases, selectedDb, onSelect, onUpdateData
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-full min-w-60 bg-card text-card-foreground border rounded-lg shadow-lg z-9999 py-1 animate-in fade-in zoom-in-95 duration-100">
-          <div className="max-h-75 overflow-y-auto">
+        <div className="absolute top-full left-0 mt-2 w-full min-w-60 bg-card text-card-foreground border rounded-lg shadow-lg z-[9999] py-1 animate-in fade-in zoom-in-95 duration-100">
+          <div className="max-h-[300px] overflow-y-auto">
             {databases.map((db, index) => (
               <div 
                 key={index}

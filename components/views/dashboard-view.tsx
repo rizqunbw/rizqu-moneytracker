@@ -488,9 +488,11 @@ export const DashboardView = ({ user, initialDb, onLogout, onUpdateUser, isViewe
       <div className="min-h-screen bg-background p-2 sm:p-4 font-sans transition-colors duration-300">
         <div className="max-w-5xl mx-auto space-y-3 sm:space-y-4">
           {/* Header */}
-          <div className="relative flex flex-col bg-card/90 backdrop-blur-md p-3 sm:p-4 rounded-xl shadow-lg border border-border/50 gap-3 overflow-hidden">
+          <div className="relative flex flex-col bg-card/90 backdrop-blur-md p-3 sm:p-4 rounded-xl shadow-lg border border-border/50 gap-3">
             {/* Decorative Element */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -z-10"></div>
+            <div className="absolute inset-0 overflow-hidden rounded-xl -z-10">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl"></div>
+            </div>
             
             <div className="flex items-start gap-3 w-full">
               {/* Icon Section */}
