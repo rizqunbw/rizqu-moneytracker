@@ -212,7 +212,111 @@ function responseJSON(status, data) {
 
 ---
 
-## 🔐 Konfigurasi Environment (.env.local)
+## 👑 Panduan Setup Admin Database (Central User Management)
+
+Script ini berfungsi sebagai **Database Pusat** untuk menyimpan data pengguna (email) dan daftar database mereka. Ini wajib dipasang agar fitur login dan simpan database berfungsi.
+
+### Langkah 1: Persiapan Google Sheet Admin
+1. Buat Spreadsheet baru di Google Sheets.
+2. Beri nama (misal: `Money Tracker Admin`).
+3. Ubah nama sheet bawah menjadi **Users**.
+4. (Opsional) Buat header di baris 1: `Email`, `Databases`, `Last Login`.
+
+### Langkah 2: Pasang Script Admin
+1. Klik **Extensions** > **Apps Script**.
+2. Paste kode berikut:
+
+<details>
+<summary>📄 <b>Klik untuk melihat Kode Script Admin (Code.gs)</b></summary>
+
+```javascript
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+
+  try {
+    var doc = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = doc.getSheetByName('Users');
+    
+    if (!sheet) {
+      sheet = doc.insertSheet('Users');
+      sheet.appendRow(['Email', 'Databases', 'Last Login']);
+    }
+
+    var data = JSON.parse(e.postData.contents);
+    var action = data.action;
+
+    // --- 1. GET USER (LOGIN) ---
+    if (action === 'get-user') {
+      var email = data.email;
+      var rows = sheet.getDataRange().getValues();
+      var user = null;
+
+      for (var i = 1; i < rows.length; i++) {
+        if (rows[i][0] === email) {
+          user = {
+            email: rows[i][0],
+            databases: rows[i][1] ? JSON.parse(rows[i][1]) : []
+          };
+          // Update Last Login
+          sheet.getRange(i + 1, 3).setValue(new Date());
+          break;
+        }
+      }
+
+      if (!user) {
+        user = { email: email, databases: [] };
+        sheet.appendRow([email, '[]', new Date()]);
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({ status: 'success', user: user })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // --- 2. UPDATE USER (SAVE DB LIST) ---
+    if (action === 'update-user') {
+      var email = data.email;
+      var updates = data.updates;
+      var databases = JSON.stringify(updates.databases || []);
+      
+      var rows = sheet.getDataRange().getValues();
+      var found = false;
+      
+      for (var i = 1; i < rows.length; i++) {
+        if (rows[i][0] === email) {
+          sheet.getRange(i + 1, 2).setValue(databases);
+          sheet.getRange(i + 1, 3).setValue(new Date());
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) {
+        sheet.appendRow([email, databases, new Date()]);
+      }
+      
+      return ContentService.createTextOutput(JSON.stringify({ status: 'success', user: { email: email, databases: JSON.parse(databases) } })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Action not found' })).setMimeType(ContentService.MimeType.JSON);
+
+  } catch (e) {
+    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: e.toString() })).setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    lock.releaseLock();
+  }
+}
+```
+</details>
+
+### Langkah 3: Deploy
+1. Deploy sebagai **Web App** (sama seperti langkah sebelumnya).
+2. Set **Who has access** ke **Anyone**.
+3. Copy URL-nya.
+4. Masukkan URL ini ke file `.env.local` sebagai `ADMIN_SCRIPT_URL`.
+
+---
+
+## � Konfigurasi Environment (.env.local)
 
 Untuk mengaktifkan fitur keamanan tambahan dan **Super Admin**, Anda perlu membuat file konfigurasi environment.
 
